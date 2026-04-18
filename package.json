@@ -86,7 +86,7 @@
     "@types/node": "16.x",
     "@types/vscode": "^1.80.0",
     "@vscode/test-electron": "^2.3.0",
-    "mocha": "^7.2.0",
+    "mocha": "^11.7.5",
     "ts-loader": "^9.4.2",
     "typescript": "^5.0.4",
     "webpack": "^5.81.0",
