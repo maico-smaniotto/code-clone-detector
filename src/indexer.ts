@@ -43,8 +43,10 @@ export class Indexer {
                     // Skip very small or empty files
                     if (content.trim().length < 50) continue;
 
+                    const fileName = path.basename(file);
+                    const prompt = `${this.config.indexPrompt}\nContext: The file name is ${fileName}.`;
                     const summary = await this.llmService.generateCompletion(
-                        this.config.indexPrompt,
+                        prompt,
                         content
                     );
 
