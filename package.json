@@ -1,0 +1,99 @@
+{
+  "name": "code-clone-detector",
+  "publisher": "maico-smaniotto",
+  "displayName": "Code Clone Detector",
+  "description": "Detect code clones across the workspace using LLMs",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codeCloneDetector.indexWorkspace",
+        "title": "CCD: Index Workspace"
+      },
+      {
+        "command": "codeCloneDetector.findClones",
+        "title": "CCD: Find Code Clones"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "codeCloneDetector.findClones",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Code Clone Detector",
+      "properties": {
+        "codeCloneDetector.llmProvider": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "claude",
+            "gemini",
+            "ollama"
+          ],
+          "default": "ollama",
+          "description": "The Large Language Model provider to use."
+        },
+        "codeCloneDetector.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for the chosen provider."
+        },
+        "codeCloneDetector.modelName": {
+          "type": "string",
+          "default": "llama3",
+          "description": "Model name to use (e.g., gpt-4, claude-3-opus, llama3)."
+        },
+        "codeCloneDetector.ollamaEndpoint": {
+          "type": "string",
+          "default": "http://127.0.0.1:11434",
+          "description": "Local endpoint when using Ollama."
+        },
+        "codeCloneDetector.indexPrompt": {
+          "type": "string",
+          "default": "You are a senior software engineer. Analyze the following source code and concisely summarize its core functionality in 1-2 sentences. Then list relevant technical keywords. Do NOT output any other text than the summary.",
+          "description": "Prompt used for analyzing and caching code functionality."
+        },
+        "codeCloneDetector.detectPrompt": {
+          "type": "string",
+          "default": "You are a code clone detector. Find snippets in the given Target Source Code that are semantically identical or very similar to the Query Snippet. Return exclusively in format: File: <filename>, Method: <methodname>, Lines: <start>-<end>. If none, say None.",
+          "description": "Prompt used for finding clones between candidates and selected code."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.1",
+    "@types/node": "16.x",
+    "@types/vscode": "^1.80.0",
+    "@vscode/test-electron": "^2.3.0",
+    "mocha": "^7.2.0",
+    "ts-loader": "^9.4.2",
+    "typescript": "^5.0.4",
+    "webpack": "^5.81.0",
+    "webpack-cli": "^5.0.2"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "ignore": "^5.3.1"
+  }
+}
