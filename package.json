@@ -20,6 +20,11 @@
       {
         "command": "codeCloneDetector.findClones",
         "title": "CCD: Find Code Clones"
+      },
+      {
+        "command": "codeCloneDetector.openClone",
+        "title": "CCD: Open Clone",
+        "enablement": "false"
       }
     ],
     "menus": {
@@ -27,6 +32,24 @@
         {
           "command": "codeCloneDetector.findClones",
           "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codeCloneDetector",
+          "title": "Code Clone Detector",
+          "icon": "$(search)"
+        }
+      ]
+    },
+    "views": {
+      "codeCloneDetector": [
+        {
+          "id": "codeCloneDetector.resultsView",
+          "name": "Clone Results",
+          "icon": "$(search)"
         }
       ]
     },

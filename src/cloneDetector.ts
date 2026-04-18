@@ -4,6 +4,7 @@ import * as path from 'path';
 import { LLMService } from './llmService';
 import { ConfigManager } from './config';
 import { Indexer } from './indexer';
+import { CloneResultsProvider } from './cloneResultsProvider';
 
 export class CloneDetector {
     private outputChannel: vscode.OutputChannel;
@@ -12,7 +13,8 @@ export class CloneDetector {
         private context: vscode.ExtensionContext,
         private indexer: Indexer,
         private llmService: LLMService,
-        private config: ConfigManager
+        private config: ConfigManager,
+        private resultsProvider: CloneResultsProvider
     ) {
         this.outputChannel = vscode.window.createOutputChannel('Code Clone Detector');
     }
@@ -37,6 +39,9 @@ export class CloneDetector {
             title: "Detecting Code Clones",
             cancellable: true
         }, async (progress, token) => {
+            this.resultsProvider.clear();
+            vscode.commands.executeCommand('codeCloneDetector.resultsView.focus');
+            
             progress.report({ message: 'Analyzing target snippet...' });
 
             // Generate a summary for the snippet to match against index cache
@@ -88,15 +93,26 @@ export class CloneDetector {
 
                 const candidateSource = fs.readFileSync(candidate.uri, 'utf8');
 
+                const candidateLines = candidateSource.split('\n').map((line, index) => `${index + 1}: ${line}`).join('\n');
+
                 const candidateFileName = path.basename(candidate.uri);
                 const searchPrompt = `${this.config.detectPrompt}\nContext: The target file is named ${candidateFileName}.\n\nQuery Snippet:\n${text}\n\nTarget File: ${candidate.uri}`;
                 try {
-                    const result = await this.llmService.generateCompletion(searchPrompt, candidateSource);
+                    const result = await this.llmService.generateCompletion(searchPrompt, candidateLines);
 
                     if (!result.toLowerCase().includes('none') && result.trim() !== '') {
                         this.outputChannel.appendLine('\n--- Clone Found! ---');
                         this.outputChannel.appendLine(`File: ${candidate.uri}`);
                         this.outputChannel.appendLine(result.trim());
+                        
+                        // Parse result: File: <filename>, Method: <methodname>, Lines: <start>-<end>
+                        const match = result.match(/File:\s*(.*?),\s*Method:\s*(.*?),\s*Lines:\s*(\d+)-(\d+)/i);
+                        if (match) {
+                            const method = match[2];
+                            const startLine = parseInt(match[3], 10);
+                            const endLine = parseInt(match[4], 10);
+                            this.resultsProvider.addClone(candidate.uri, method, startLine, endLine);
+                        }
                     }
                 } catch (e) {
                     this.outputChannel.appendLine(`\nError checking ${candidate.uri}`);
