@@ -23,8 +23,7 @@
       },
       {
         "command": "codeCloneDetector.openClone",
-        "title": "CCD: Open Clone",
-        "enablement": "false"
+        "title": "CCD: Open Clone"
       }
     ],
     "menus": {
