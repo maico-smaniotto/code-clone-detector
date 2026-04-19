@@ -31,15 +31,29 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     let openCloneDisposable = vscode.commands.registerCommand('codeCloneDetector.openClone', async (item: CloneResultItem) => {
-        if (!item || !item.filePath) return;
+        if (!item || !item.filePath) {
+            vscode.window.showErrorMessage("Invalid clone item or missing file path.");
+            return;
+        }
         
-        const doc = await vscode.workspace.openTextDocument(item.filePath);
-        const editor = await vscode.window.showTextDocument(doc);
-        
-        const startPos = new vscode.Position(Math.max(0, item.startLine - 1), 0);
-        const endPos = new vscode.Position(Math.max(0, item.endLine - 1), 0);
-        editor.selection = new vscode.Selection(startPos, endPos);
-        editor.revealRange(new vscode.Range(startPos, endPos), vscode.TextEditorRevealType.InCenter);
+        try {
+            const uri = vscode.Uri.file(item.filePath);
+            const doc = await vscode.workspace.openTextDocument(uri);
+            const editor = await vscode.window.showTextDocument(doc);
+            
+            let start = item.startLine - 1;
+            let end = item.endLine - 1;
+            
+            if (Number.isNaN(start) || start < 0) start = 0;
+            if (Number.isNaN(end) || end < start) end = start;
+
+            const startPos = new vscode.Position(start, 0);
+            const endPos = new vscode.Position(end, 0);
+            editor.selection = new vscode.Selection(startPos, endPos);
+            editor.revealRange(new vscode.Range(startPos, endPos), vscode.TextEditorRevealType.InCenter);
+        } catch (e: any) {
+            vscode.window.showErrorMessage("Failed to open clone: " + e.message);
+        }
     });
 
     context.subscriptions.push(indexDisposable, findDisposable, openCloneDisposable);

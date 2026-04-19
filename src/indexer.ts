@@ -56,6 +56,8 @@ export class Indexer {
                     });
                 } catch (err: any) {
                     console.error(`Failed to index ${file}: ${err.message}`);
+                    vscode.window.showErrorMessage(`Failed to connect to LLM while indexing: ${err.message}`);
+                    break;
                 }
 
                 i++;
