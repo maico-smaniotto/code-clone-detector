@@ -14,10 +14,6 @@
   "contributes": {
     "commands": [
       {
-        "command": "codeCloneDetector.indexWorkspace",
-        "title": "CCD: Index Workspace"
-      },
-      {
         "command": "codeCloneDetector.findClones",
         "title": "CCD: Find Code Clones"
       },
@@ -86,11 +82,6 @@
           "type": "string",
           "default": "https://api.opencode.com/v1/chat/completions",
           "description": "Endpoint for OpenCode API."
-        },
-        "codeCloneDetector.indexPrompt": {
-          "type": "string",
-          "default": "You are a senior software engineer. Analyze the following source code and concisely summarize its core functionality in 1-2 sentences. Then list relevant technical keywords. Do NOT output any other text than the summary.",
-          "description": "Prompt used for analyzing and caching code functionality."
         },
         "codeCloneDetector.detectPrompt": {
           "type": "string",

@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { LLMService } from './llmService';
 import { ConfigManager } from './config';
-import { Indexer } from './indexer';
 import { CloneResultsProvider } from './cloneResultsProvider';
 
 export class CloneDetector {
@@ -11,7 +10,6 @@ export class CloneDetector {
 
     constructor(
         private context: vscode.ExtensionContext,
-        private indexer: Indexer,
         private llmService: LLMService,
         private config: ConfigManager,
         private resultsProvider: CloneResultsProvider
@@ -34,14 +32,15 @@ export class CloneDetector {
             return;
         }
 
-        const summaries = this.indexer.getIndexedSummaries();
-        if (summaries.length === 0) {
-            vscode.window.showWarningMessage('Workspace index is empty. Please run Index Workspace first.');
+        const files = await vscode.workspace.findFiles('**/*.{ts,js,py,java,c,cpp,cs,pas}');
+        if (files.length === 0) {
+            vscode.window.showWarningMessage('No source files found in the workspace.');
             return;
         }
 
-        const quickPickItems: vscode.QuickPickItem[] = summaries.map(s => ({
-            label: vscode.workspace.asRelativePath(s.uri),
+        const quickPickItems: vscode.QuickPickItem[] = files.map(uri => ({
+            label: vscode.workspace.asRelativePath(uri),
+            description: uri.fsPath,
             picked: true
         }));
 
@@ -55,57 +54,60 @@ export class CloneDetector {
             return;
         }
 
-        const selectedUris = new Set(selectedItems.map(item => item.label));
-        const filteredSummaries = summaries.filter(s => selectedUris.has(vscode.workspace.asRelativePath(s.uri)));
+        const selectedUris = selectedItems.map(item => vscode.Uri.file(item.description!));
 
         vscode.window.withProgress({
             location: vscode.ProgressLocation.Notification,
             title: "Detecting Code Clones",
             cancellable: true
         }, async (progress, token) => {
+            const startTime = Date.now();
             this.resultsProvider.clear();
             vscode.commands.executeCommand('codeCloneDetector.resultsView.focus');
             this.outputChannel.show(true);
             this.outputChannel.clear();
-            this.outputChannel.appendLine(`Searching clones for snippet in ${filteredSummaries.length} files...`);
+            this.outputChannel.appendLine(`Searching clones for snippet in ${selectedUris.length} files...`);
 
-            for (let idx = 0; idx < filteredSummaries.length; idx++) {
+            for (let idx = 0; idx < selectedUris.length; idx++) {
                 if (token.isCancellationRequested) break;
 
-                const candidate = filteredSummaries[idx];
-                progress.report({ message: `Checking ${vscode.workspace.asRelativePath(candidate.uri)} (${idx + 1}/${filteredSummaries.length})...`, increment: (100 / filteredSummaries.length) });
+                const candidateUri = selectedUris[idx];
+                const candidateFileName = path.basename(candidateUri.fsPath);
+                progress.report({ message: `Checking ${candidateFileName} (${idx + 1}/${selectedUris.length})...`, increment: (100 / selectedUris.length) });
 
-                const candidateSource = fs.readFileSync(candidate.uri, 'utf8');
+                const candidateSource = fs.readFileSync(candidateUri.fsPath, 'utf8');
 
                 const candidateLines = candidateSource.split('\n').map((line, index) => `${index + 1}: ${line}`).join('\n');
 
-                const candidateFileName = path.basename(candidate.uri);
-                const searchPrompt = `${this.config.detectPrompt}\nContext: The target file is named ${candidateFileName}.\n\nQuery Snippet:\n${text}\n\nTarget File: ${candidate.uri}`;
+                const searchPrompt = `${this.config.detectPrompt}\nContext: The target file is named ${candidateFileName}.\n\nQuery Snippet:\n${text}\n\nTarget File: ${candidateUri.fsPath}`;
                 try {
                     const result = await this.llmService.generateCompletion(searchPrompt, candidateLines);
 
                     if (!result.toLowerCase().includes('none') && result.trim() !== '') {
                         this.outputChannel.appendLine('\n--- Clone Found! ---');
-                        this.outputChannel.appendLine(`File: ${candidate.uri}`);
+                        this.outputChannel.appendLine(`File: ${candidateUri.fsPath}`);
                         this.outputChannel.appendLine(result.trim());
-                        
+
                         // Parse result: File: <filename>, Method: <methodname>, Lines: <start>-<end>
                         const match = result.match(/File:\s*(.*?),\s*Method:\s*(.*?),\s*Lines:\s*(\d+)-(\d+)/i);
                         if (match) {
                             const method = match[2];
                             const startLine = parseInt(match[3], 10);
                             const endLine = parseInt(match[4], 10);
-                            this.resultsProvider.addClone(candidate.uri, method, startLine, endLine);
+                            this.resultsProvider.addClone(candidateUri.fsPath, method, startLine, endLine);
                         }
                     }
                 } catch (e: any) {
-                    this.outputChannel.appendLine(`\nError checking ${candidate.uri}: ${e.message}`);
+                    this.outputChannel.appendLine(`\nError checking ${candidateUri.fsPath}: ${e.message}`);
                     vscode.window.showErrorMessage(`Failed to connect to LLM: ${e.message}`);
                     break;
                 }
             }
 
-            this.outputChannel.appendLine('\n--- Detection Complete ---');
+            const endTime = Date.now();
+            const durationSec = ((endTime - startTime) / 1000).toFixed(2);
+            this.outputChannel.appendLine(`\n--- Analysis Completed in ${durationSec}s ---`);
+            vscode.window.showInformationMessage(`Clone analysis completed in ${durationSec}s.`);
         });
     }
 }
