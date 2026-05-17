@@ -16,6 +16,8 @@ export class LLMService {
                 return this.callClaude(fullPrompt);
             case 'gemini':
                 return this.callGemini(fullPrompt);
+            case 'opencode':
+                return this.callOpenCode(fullPrompt);
             default:
                 throw new Error(`Unsupported LLM provider: ${this.config.llmProvider}`);
         }
@@ -65,5 +67,18 @@ export class LLMService {
             headers: { 'Content-Type': 'application/json' }
         });
         return response.data.candidates[0].content.parts[0].text;
+    }
+
+    private async callOpenCode(prompt: string): Promise<string> {
+        const response = await axios.post(this.config.opencodeEndpoint, {
+            model: this.config.modelName,
+            messages: [{ role: 'user', content: prompt }]
+        }, {
+            headers: {
+                'Authorization': `Bearer ${this.config.apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        return response.data.choices[0].message.content;
     }
 }

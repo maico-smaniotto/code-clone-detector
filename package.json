@@ -61,7 +61,8 @@
             "openai",
             "claude",
             "gemini",
-            "ollama"
+            "ollama",
+            "opencode"
           ],
           "default": "ollama",
           "description": "The Large Language Model provider to use."
@@ -80,6 +81,11 @@
           "type": "string",
           "default": "http://127.0.0.1:11434",
           "description": "Local endpoint when using Ollama."
+        },
+        "codeCloneDetector.opencodeEndpoint": {
+          "type": "string",
+          "default": "https://api.opencode.com/v1/chat/completions",
+          "description": "Endpoint for OpenCode API."
         },
         "codeCloneDetector.indexPrompt": {
           "type": "string",
