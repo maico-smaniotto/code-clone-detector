@@ -89,8 +89,9 @@ export class CloneDetector {
                         this.outputChannel.appendLine(result.trim());
 
                         // Parse result: File: <filename>, Method: <methodname>, Lines: <start>-<end>
-                        const match = result.match(/File:\s*(.*?),\s*Method:\s*(.*?),\s*Lines:\s*(\d+)-(\d+)/i);
-                        if (match) {
+                        const regex = /File:\s*(.*?),\s*Method:\s*(.*?),\s*Lines:\s*(\d+)-(\d+)/gi;
+                        let match;
+                        while ((match = regex.exec(result)) !== null) {
                             const method = match[2];
                             const startLine = parseInt(match[3], 10);
                             const endLine = parseInt(match[4], 10);
