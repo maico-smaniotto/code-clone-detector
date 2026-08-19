@@ -74,9 +74,7 @@ Abra as **Configurações** (`Ctrl+,`) e pesquise por `Code Clone Detector`, ou 
 
 ## Arquitetura
 
-```
-
-```
+<img height="300" alt="Diagrama de arquitetura" src="images/diagram_pt.png" />
 
 ## Stack Tecnológica
 
