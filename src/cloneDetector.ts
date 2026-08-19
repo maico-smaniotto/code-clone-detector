@@ -32,7 +32,7 @@ export class CloneDetector {
             return;
         }
 
-        const files = await vscode.workspace.findFiles('**/*.{ts,js,py,java,c,cpp,cs,pas}');
+        const files = await vscode.workspace.findFiles('**/*.{ts,tsx,js,jsx,py,java,c,cpp,cs,go,rs,rb,kt,kts,swift,php,scala,r,lua,pl,sql,sh,zig,pas}');
         if (files.length === 0) {
             vscode.window.showWarningMessage('No source files found in the workspace.');
             return;
